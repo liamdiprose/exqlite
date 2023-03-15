@@ -1,13 +1,21 @@
 {
-  inputs.nixpkgs.url = github:NixOS/nixpkgs/release-22.11;
+  inputs = {
+    nixpkgs.url = github:NixOS/nixpkgs/release-22.11;
+    flake-utils.url = github:numtide/flake-utils;
+  };
 
-  outputs = { self, nixpkgs }: 
+  outputs = { self, nixpkgs, flake-utils }: flake-utils.lib.eachDefaultSystem (system: 
     let 
-      pkgs = nixpkgs.legacyPackages.x86_64-linux;
+      pkgs = nixpkgs.legacyPackages.${system};
     in {
-      devShells.x86_64-linux.default = pkgs.mkShell {
+      lib.default = import ./default.nix;
+      packages.default = pkgs.beam.packages.erlangR25.callPackage ./default.nix {};
+      devShells.default = pkgs.mkShell {
         name = "exqlite";
-        buildInputs = [ pkgs.erlang ];
+        buildInputs = with pkgs; [ 
+          erlang 
+          mix2nix
+        ];
       };
-    };
+    });
 }
