@@ -63,6 +63,24 @@ defmodule Exqlite.Sqlite3Test do
         Sqlite3.open(path, mode: :notarealmode)
       end
     end
+
+    test "fails to open a database with invalid permissions" do
+      {:ok, path} = Temp.path()
+      {:ok, conn} = Sqlite3.open(path)
+
+      create_table_query = "create table test (id integer primary key, stuff text)"
+      :ok = Sqlite3.execute(conn, create_table_query)
+
+      insert_value_query = "insert into test (stuff) values ('This is a test')"
+      :ok = Sqlite3.execute(conn, insert_value_query)
+
+      :ok = Sqlite3.close(conn)
+
+      File.chmod(path, 0o000)
+      {:ok, conn} = Sqlite3.open(path)
+
+      File.rm(path)
+    end
   end
 
   describe ".close/2" do
