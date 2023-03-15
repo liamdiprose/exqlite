@@ -1,6 +1,7 @@
 #include <assert.h>
 #include <string.h>
 #include <stdio.h>
+#include <unistd.h>
 
 // Elixir workaround for . in module names
 #ifdef STATIC_ERLANG_NIF
@@ -187,6 +188,7 @@ make_sqlite3_error_tuple(ErlNifEnv* env, int rc, sqlite3* db)
 static ERL_NIF_TERM
 exqlite_open(ErlNifEnv* env, int argc, const ERL_NIF_TERM argv[])
 {
+    // return make_error_tuple(env, "database_open_failed");
     assert(env);
 
     int rc             = 0;
@@ -216,10 +218,12 @@ exqlite_open(ErlNifEnv* env, int argc, const ERL_NIF_TERM argv[])
 
     rc = sqlite3_open_v2(filename, &conn->db, flags, NULL);
     if (rc != SQLITE_OK) {
-        enif_release_resource(conn);
+        printf("Failed to open %s with uid %d...\n", filename, geteuid());
+        // enif_release_resource(conn);
         return make_error_tuple(env, "database_open_failed");
     }
 
+    // printf("5\n");
     conn->mutex = enif_mutex_create("exqlite:connection");
     if (conn->mutex == NULL) {
         enif_release_resource(conn);
